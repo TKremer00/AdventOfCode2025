@@ -18,15 +18,15 @@ impl Database {
 
         let mut merged: Vec<IdRange> = Vec::new();
 
-        for r in self.ids.drain(..) {
+        for r in self.ids.iter() {
             if let Some(last) = merged.last_mut() {
                 if r.0 <= last.1 {
                     last.1 = last.1.max(r.1);
                 } else {
-                    merged.push(r);
+                    merged.push(*r);
                 }
             } else {
-                merged.push(r);
+                merged.push(*r);
             }
         }
 
