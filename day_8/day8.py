@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import reduce
-from pprint import pprint
+import sys
 import math
 
 @dataclass(eq=True, frozen=True)
@@ -66,15 +66,14 @@ def to_distance_coordiantes(coordinates: list[Coordinate]) -> list[DistanceCoord
             distances.append(DistanceCoordinate(a,b))
     return distances
 
-def group_coordinates(distances: list[DistanceCoordinate]) -> list[Circuit]:
+def group_coordinates(distances: list[DistanceCoordinate], max: int) -> (list[Circuit], DistanceCoordinate):
     groups = []
-    connections = 0
     find_group = lambda c: next((g for g in groups if  g.contains_coordinate(c)), None)
     distances = sorted(distances, key=lambda x: x.get_distance())
 
-    for distance in distances[:10]:
-        connections += 1
+    currentPoints = None
 
+    for distance in distances[:max]:
         group1Index = -1
         group2Index = -1
         for i in range(len(groups)):
@@ -89,15 +88,19 @@ def group_coordinates(distances: list[DistanceCoordinate]) -> list[Circuit]:
             group.add_coordinate(distance.a)
             group.add_coordinate(distance.b)
             groups.append(group)
+            currentPoints = distance
         elif group1Index != -1 and group2Index == -1:
             groups[group1Index].add_coordinate(distance.b)
+            currentPoints = distance
         elif group1Index == -1 and group2Index != -1:
             groups[group2Index].add_coordinate(distance.a)
+            currentPoints = distance
         elif group1Index != group2Index:
             groups[group1Index].add_coordinates(groups[group2Index].coordinates)
             groups.pop(group2Index)
+            currentPoints = distance
 
-    return groups
+    return (groups, currentPoints)
 
 def part1():
     file_path = 'input.txt'
@@ -107,17 +110,22 @@ def part1():
 
     coordinates = read_cooridinates(input)
     distances = to_distance_coordiantes(coordinates)
-    groups = group_coordinates(distances)
+    (groups,_) = group_coordinates(distances, 1000)
     test = [x.get_total_coordinates() for x in groups]
+    test.sort(reverse=True)
     total_sum = reduce(lambda x,y: x * y, test[:3])
     print(total_sum)
 
 def part2():
-    file_path = 'test_input.txt'
+    file_path = 'input.txt'
     input = None
     with open(file_path, 'r') as file:
         input = file.read()
 
+    coordinates = read_cooridinates(input)
+    distances = to_distance_coordiantes(coordinates)
+    (_, t) = group_coordinates(distances, sys.maxsize)
+    print(t.a.x * t.b.x)
 
 import time
 if __name__ == '__main__':
@@ -128,9 +136,9 @@ if __name__ == '__main__':
     elapsed_ms = (end - start) * 1000
     print(f"Elapsed time: {elapsed_ms:.3f} ms")
 
-    # start = time.perf_counter()
-    # part2()
-    # end = time.perf_counter()
+    start = time.perf_counter()
+    part2()
+    end = time.perf_counter()
 
-    # elapsed_ms = (end - start) * 1000
-    # print(f"Elapsed time: {elapsed_ms:.3f} ms")
+    elapsed_ms = (end - start) * 1000
+    print(f"Elapsed time: {elapsed_ms:.3f} ms")
